@@ -528,8 +528,6 @@ export const makeGitManager = Effect.gen(function* () {
 
   const findOpenPr = (cwd: string, headSelectors: ReadonlyArray<string>) =>
     Effect.gen(function* () {
-      const parsedByNumber = new Map<number, PullRequestInfo>();
-
       for (const headSelector of headSelectors) {
         const pullRequests = yield* gitHubCli.listOpenPullRequests({
           cwd,
@@ -538,7 +536,7 @@ export const makeGitManager = Effect.gen(function* () {
         });
 
         for (const pr of pullRequests) {
-          parsedByNumber.set(pr.number, {
+          return {
             number: pr.number,
             title: pr.title,
             url: pr.url,
@@ -546,12 +544,11 @@ export const makeGitManager = Effect.gen(function* () {
             headRefName: pr.headRefName,
             state: "open",
             updatedAt: null,
-          } satisfies PullRequestInfo);
+          } satisfies PullRequestInfo;
         }
       }
 
-      const [first] = parsedByNumber.values();
-      return first ?? null;
+      return null;
     });
 
   const findLatestPr = (cwd: string, details: { branch: string; upstreamRef: string | null }) =>
