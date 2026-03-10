@@ -334,13 +334,24 @@ const makeGitCore = Effect.gen(function* () {
         return null;
       }
 
-      const separatorIndex = upstreamRef.indexOf("/");
-      if (separatorIndex <= 0) {
+      const currentBranch = yield* runGitStdout(
+        "GitCore.resolveCurrentUpstream.branch",
+        cwd,
+        ["rev-parse", "--abbrev-ref", "HEAD"],
+        true,
+      ).pipe(Effect.map((stdout) => stdout.trim()));
+
+      const remoteName = yield* readConfigValue(cwd, `branch.${currentBranch}.remote`);
+      if (!remoteName) {
         return null;
       }
-      const remoteName = upstreamRef.slice(0, separatorIndex);
-      const upstreamBranch = upstreamRef.slice(separatorIndex + 1);
-      if (remoteName.length === 0 || upstreamBranch.length === 0) {
+
+      const prefix = `${remoteName}/`;
+      if (!upstreamRef.startsWith(prefix)) {
+        return null;
+      }
+      const upstreamBranch = upstreamRef.slice(prefix.length);
+      if (upstreamBranch.length === 0) {
         return null;
       }
 
